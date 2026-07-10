@@ -72,10 +72,7 @@ def test_missing_prerequisite_cross_list_and_strict_status():
     body = normal.json()
     assert body["status"] == "warning"
     assert body["timeline_validation"][0]["term"] == "24W"
-    assert (
-        body["timeline_validation"][0]["errors"][0]["type"]
-        == "MISSING_PREREQUISITE"
-    )
+    assert body["timeline_validation"][0]["errors"][0]["type"] == "MISSING_PREREQUISITE"
     assert body["cross_list_violations"][0]["type"] == "CROSS_LIST_CONFLICT"
     assert body["credit_summary"] == {
         "total_earned": 6,
@@ -83,9 +80,7 @@ def test_missing_prerequisite_cross_list_and_strict_status():
         "total_remaining_for_graduation": 108,
     }
 
-    strict = client.get(
-        f"/api/v1/students/{student_id}/audit-report?strict=true"
-    )
+    strict = client.get(f"/api/v1/students/{student_id}/audit-report?strict=true")
     assert strict.status_code == 200
     assert strict.json()["status"] == "failed"
 
@@ -241,18 +236,12 @@ def test_history_import_profile_plan_and_delete_routes():
     assert profile.status_code == 200
     assert len(profile.json()["history"]) == 2
 
-    plan = {
-        "planned_courses": [
-            {"course_code": "COSC 2007", "term": "25W"}
-        ]
-    }
+    plan = {"planned_courses": [{"course_code": "COSC 2007", "term": "25W"}]}
 
     response = client.post("/api/v1/students/42/plan", json=plan)
     assert response.status_code == 200
 
-    plan["planned_courses"].append(
-        {"course_code": "COSC3506", "term": "25F"}
-    )
+    plan["planned_courses"].append({"course_code": "COSC3506", "term": "25F"})
 
     updated_plan = client.put("/api/v1/students/42/plan", json=plan)
     assert updated_plan.json()["planned_courses_saved"] == 2
@@ -268,9 +257,7 @@ def test_history_import_profile_plan_and_delete_routes():
         ]
     }
 
-    update_history = client.put(
-        "/api/v1/students/42/history", json=history
-    )
+    update_history = client.put("/api/v1/students/42/history", json=history)
     assert update_history.status_code == 200
 
     delete_plan = client.delete("/api/v1/students/42/plan")
@@ -286,10 +273,7 @@ def test_history_import_profile_plan_and_delete_routes():
 
 def test_missing_student_routes_return_404():
     assert client.get("/api/v1/students/missing/profile").status_code == 404
-    assert (
-        client.get("/api/v1/students/missing/audit-report").status_code
-        == 404
-    )
+    assert client.get("/api/v1/students/missing/audit-report").status_code == 404
     assert (
         client.post(
             "/api/v1/students/missing/plan",
@@ -339,7 +323,4 @@ def test_empty_plan_credit_summary():
 
     body = response.json()
     assert body["status"] == "ok"
-    assert (
-        body["credit_summary"]["total_remaining_for_graduation"]
-        == 120
-    )
+    assert body["credit_summary"]["total_remaining_for_graduation"] == 120

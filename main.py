@@ -130,7 +130,9 @@ def parse_transcript_html(html: str) -> List[Dict[str, Any]]:
         header_map: Dict[str, int] = {}
         header_index = -1
         for index, row in enumerate(rows):
-            cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+            cells = [
+                cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])
+            ]
             header_map = find_transcript_header(cells)
             if header_map:
                 header_index = index
@@ -139,7 +141,9 @@ def parse_transcript_html(html: str) -> List[Dict[str, Any]]:
             continue
 
         for row in rows[header_index + 1 :]:
-            cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+            cells = [
+                cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])
+            ]
             if len(cells) <= max(header_map.values()):
                 continue
 
@@ -151,7 +155,9 @@ def parse_transcript_html(html: str) -> List[Dict[str, Any]]:
                 "Completed"
                 if status_key == "completed"
                 else (
-                    "In-Progress" if status_key in {"in-progress", "in progress"} else "Attempted"
+                    "In-Progress"
+                    if status_key in {"in-progress", "in progress"}
+                    else "Attempted"
                 )
             )
 
@@ -170,7 +176,10 @@ def parse_transcript_html(html: str) -> List[Dict[str, Any]]:
             }
             key = (normalized_code, term)
             existing = deduped.get(key)
-            if existing is None or (candidate["_grade_rank"], candidate["credits_earned"]) > (
+            if existing is None or (
+                candidate["_grade_rank"],
+                candidate["credits_earned"],
+            ) > (
                 existing["_grade_rank"],
                 existing["credits_earned"],
             ):
@@ -181,7 +190,10 @@ def parse_transcript_html(html: str) -> List[Dict[str, Any]]:
         item.pop("_grade_rank", None)
         history.append(item)
     history.sort(
-        key=lambda item: (term_key(item["term"]), normalize_course_code(item["course_code"]))
+        key=lambda item: (
+            term_key(item["term"]),
+            normalize_course_code(item["course_code"]),
+        )
     )
     return history
 
@@ -191,7 +203,12 @@ def find_catalog_header(cells: List[str]) -> Dict[str, int]:
         "course_code": {"course code", "course", "code", "course_code"},
         "title": {"title", "course title", "name"},
         "credits": {"credits", "credit"},
-        "prerequisites": {"prerequisites", "prerequisite", "pre-requisites", "pre requisite"},
+        "prerequisites": {
+            "prerequisites",
+            "prerequisite",
+            "pre-requisites",
+            "pre requisite",
+        },
         "cross_listed": {
             "cross-listed",
             "cross listed",
@@ -219,7 +236,9 @@ def parse_catalog_html(html: str) -> List[Dict[str, Any]]:
         header_map: Dict[str, int] = {}
         header_index = -1
         for index, row in enumerate(rows):
-            cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+            cells = [
+                cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])
+            ]
             header_map = find_catalog_header(cells)
             if header_map:
                 header_index = index
@@ -228,18 +247,28 @@ def parse_catalog_html(html: str) -> List[Dict[str, Any]]:
             continue
 
         for row in rows[header_index + 1 :]:
-            cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+            cells = [
+                cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])
+            ]
             if len(cells) <= max(header_map.values()):
                 continue
             raw_code = clean_text(cells[header_map["course_code"]])
             code = normalize_course_code(raw_code)
             if not code:
                 continue
-            title = clean_text(cells[header_map["title"]]) if "title" in header_map else ""
-            prereq_text = (
-                cells[header_map["prerequisites"]] if "prerequisites" in header_map else ""
+            title = (
+                clean_text(cells[header_map["title"]]) if "title" in header_map else ""
             )
-            cross_text = cells[header_map["cross_listed"]] if "cross_listed" in header_map else ""
+            prereq_text = (
+                cells[header_map["prerequisites"]]
+                if "prerequisites" in header_map
+                else ""
+            )
+            cross_text = (
+                cells[header_map["cross_listed"]]
+                if "cross_listed" in header_map
+                else ""
+            )
             courses[code] = {
                 "course_code": display_course_code(raw_code),
                 "title": title,
@@ -267,7 +296,9 @@ def completed_credit_map(history: List[Dict[str, Any]]) -> Dict[str, int]:
         code = normalize_course_code(entry.get("course_code", ""))
         if not code:
             continue
-        completed[code] = max(completed.get(code, 0), int(entry.get("credits_earned", 0) or 0))
+        completed[code] = max(
+            completed.get(code, 0), int(entry.get("credits_earned", 0) or 0)
+        )
     return completed
 
 
@@ -278,10 +309,13 @@ def build_audit_report(student_id: str, strict: bool) -> Dict[str, Any]:
     catalog = app.state.catalog
 
     completed_entries = [
-        entry for entry in history if clean_text(entry.get("status")).lower() == "completed"
+        entry
+        for entry in history
+        if clean_text(entry.get("status")).lower() == "completed"
     ]
     completed_codes = {
-        normalize_course_code(entry.get("course_code", "")) for entry in completed_entries
+        normalize_course_code(entry.get("course_code", ""))
+        for entry in completed_entries
     }
 
     errors_by_term: Dict[str, List[Dict[str, str]]] = {}
@@ -344,7 +378,9 @@ def build_audit_report(student_id: str, strict: bool) -> Dict[str, Any]:
     total_earned = sum(completed_credit_map(history).values())
     total_planned = sum(
         int(
-            catalog.get(normalize_course_code(item.get("course_code", "")), {}).get("credits", 0)
+            catalog.get(normalize_course_code(item.get("course_code", "")), {}).get(
+                "credits", 0
+            )
             or 0
         )
         for item in plan
@@ -352,7 +388,9 @@ def build_audit_report(student_id: str, strict: bool) -> Dict[str, Any]:
     total_remaining = max(0, 120 - total_earned - total_planned)
 
     has_issues = bool(timeline_validation or cross_list_violations)
-    report_status = "failed" if has_issues and strict else ("warning" if has_issues else "ok")
+    report_status = (
+        "failed" if has_issues and strict else ("warning" if has_issues else "ok")
+    )
 
     return {
         "student_id": student_id,
@@ -395,8 +433,12 @@ def get_catalog_course(course_code: str) -> Dict[str, Any]:
     return course
 
 
-@app.post("/api/v1/students/{student_id}/history/import", status_code=status.HTTP_201_CREATED)
-async def import_history(student_id: str, file: UploadFile = File(...)) -> Dict[str, Any]:
+@app.post(
+    "/api/v1/students/{student_id}/history/import", status_code=status.HTTP_201_CREATED
+)
+async def import_history(
+    student_id: str, file: UploadFile = File(...)
+) -> Dict[str, Any]:
     html = (await file.read()).decode("utf-8", errors="ignore")
     parsed_history = parse_transcript_html(html)
     with app.state.lock:
@@ -443,7 +485,11 @@ def delete_plan(student_id: str) -> Dict[str, str]:
 @app.get("/api/v1/students/{student_id}/profile")
 def get_profile(student_id: str) -> Dict[str, Any]:
     student = get_student_or_404(student_id)
-    return {"student_id": student_id, "history": student["history"], "plan": student["plan"]}
+    return {
+        "student_id": student_id,
+        "history": student["history"],
+        "plan": student["plan"],
+    }
 
 
 @app.get("/api/v1/students/{student_id}/audit-report")
